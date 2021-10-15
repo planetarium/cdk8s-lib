@@ -1,0 +1,137 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Headless snapshot 1`] = `
+Array [
+  Object {
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": Object {
+      "labels": Object {
+        "app": "main-miner-1",
+      },
+      "name": "main-miner-1",
+    },
+    "spec": Object {
+      "replicas": 1,
+      "selector": Object {
+        "matchLabels": Object {
+          "app": "main-miner-1",
+        },
+      },
+      "serviceName": "main-miner-1",
+      "template": Object {
+        "spec": Object {
+          "containers": Array [
+            Object {
+              "args": Array [
+                "NineChronicles.Headless.Executable.dll",
+                "run",
+                "--app-protocol-version=100080/6ec8E598962F1f475504F82fD5bF3410eAE58B9B/MEUCIQCrSQ9v7NZBo5yCyvlHgBXW6lD4p2lFlKqK+aMeoKA.IAIgVkcK6hMCw1E0mf+m7rCf+9XnSL8Apg.joe6I1a8Nw70=/ZHUxNjpXaW5kb3dzQmluYXJ5VXJsdTU2Omh0dHBzOi8vZG93bmxvYWQubmluZS1jaHJvbmljbGVzLmNvbS92MTAwMDgwL1dpbmRvd3MuemlwdTk6dGltZXN0YW1wdTEwOjIwMjEtMDktMzBl",
+                "--trusted-app-protocol-version-signer=03eeedcd574708681afb3f02fb2aef7c643583089267d17af35e978ecaf2a1184e",
+                "--host=9c-main-miner-1.planetarium.dev",
+                "--port=31234",
+                "--swarm-private-key=[object Object]",
+                "--swarm-private-key=[object Object]",
+                "--graphql-server",
+                "--graphql-host=0.0.0.0",
+                "--graphql-port=80",
+                "--peer=027bd36895d68681290e570692ad3736750ceaab37be402442ffb203967f98f7b6,9c-main-seed-1.planetarium.dev,31234",
+                "--peer=02f164e3139e53eef2c17e52d99d343b8cbdb09eeed88af46c352b1c8be6329d71,9c-main-seed-2.planetarium.dev,31234",
+                "--peer=0247e289aa332260b99dfd50e578f779df9e6702d67e50848bb68f3e0737d9b9a5,9c-main-seed-3.planetarium.dev,31234",
+              ],
+              "command": Array [
+                "dotnet",
+              ],
+              "image": "planetariumhq/ninechronicles-headless:v100080-mt-2021093001",
+              "livenessProbe": Object {
+                "failureThreshold": 3,
+                "initialDelaySeconds": 120,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "tcpSocket": Object {
+                  "port": 31234,
+                },
+                "timeoutSeconds": 1,
+              },
+              "name": "main-miner-1",
+              "ports": Array [
+                Object {
+                  "containerPort": 31234,
+                  "name": "node",
+                  "protocol": "TCP",
+                },
+                Object {
+                  "containerPort": 80,
+                  "name": "graphql",
+                  "protocol": "TCP",
+                },
+              ],
+              "resources": Object {
+                "requests": Object {
+                  "cpu": "1300m",
+                  "memory": "5Gi",
+                },
+              },
+              "volumeMounts": Array [
+                Object {
+                  "mountPath": "/data",
+                  "name": "main-miner-1-data",
+                },
+              ],
+            },
+          ],
+          "dnsPolicy": "ClusterFirst",
+          "restartPolicy": "Always",
+        },
+      },
+      "updateStrategy": Object {
+        "type": "OnDelete",
+      },
+      "volumeClaimTemplates": Array [
+        Object {
+          "metadata": Object {
+            "name": "main-miner-1-data",
+          },
+          "spec": Object {
+            "accessModes": Array [
+              "ReadWriteOnce",
+            ],
+            "resources": Object {
+              "requests": Object {
+                "storage": "100Gi",
+              },
+            },
+            "storageClassName": "gp2-extensible",
+            "volumeMode": "FileSystem",
+          },
+        },
+      ],
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": Object {
+      "name": "main-miner-1",
+    },
+    "spec": Object {
+      "ports": Array [
+        Object {
+          "name": "node",
+          "port": 31234,
+          "targetPort": 31234,
+        },
+        Object {
+          "name": "graphql",
+          "port": 80,
+          "targetPort": 80,
+        },
+      ],
+      "selector": Object {
+        "app": "main-miner-1",
+      },
+      "type": "LoadBalancer",
+    },
+  },
+]
+`;
