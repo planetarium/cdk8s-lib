@@ -1,31 +1,48 @@
-// import { Deployment, Protocol } from "cdk8s-plus-22";
 import { Construct } from "constructs";
-import { KubeService, IntOrString, Quantity } from "cdk8s-plus-22/lib/imports/k8s";
+import { KubeService, IntOrString, Quantity, EnvVar } from "cdk8s-plus-22/lib/imports/k8s";
 import { KubeStatefulSet } from "../imports/k8s";
 
-interface HostAndPort { host: string, port: number };
+interface HostAndPort { host: string, port: number | undefined };
 
-type LogLevel = "error" | "warning" | "information" | "debug" | "verbose"
+export enum PrivateKeyStrategy {
+    FromSecret,
+    FromValue,
+}
+
+type PrivateKey = {
+    strategy: PrivateKeyStrategy.FromSecret,
+    secret: {
+        name: string,
+        key: string,
+    }
+} | {
+    strategy: PrivateKeyStrategy.FromValue,
+    privateKey: string,
+};
 
 export interface HeadlessOptions {
+    replicas: number,
     image: string,
-    logLevel: LogLevel,
-    workers: number | undefined,
+    workers?: number,
     appProtocolVersion: string,
-    libplanet: HostAndPort,
+    trustedAppProtocolVersionSigner: string,
+    genesisBlockPath: string,
+    txQuotaPerSigner: number,
+    libplanet: HostAndPort | undefined,
     graphql: HostAndPort | undefined,
-    iceServers: string[] | undefined,
+    iceServers?: string[],
     peers: string[] | undefined,
-    privateKey: string,
+    swarmPrivateKey: PrivateKey | undefined,
+    minerPrivateKey: PrivateKey | undefined,
     store: {
         type: string,
         path: string,
-    }
-    chainTipStaleBehaviour: string,
+    },
+    chainTipStaleBehaviour?: string,
     minimumBroadcastTarget: number,
 };
 
-export class Explorer extends Construct {
+export class Headless extends Construct {
     constructor(scope: Construct, id: string, options: HeadlessOptions) {
         super(scope, id);
 
@@ -37,6 +54,13 @@ export class Explorer extends Construct {
         const peers = options.peers || [];
         const peersArgs = peers.map(peer => `--peer=${peer}`);
 
+        const libplanetArgs = options.libplanet === undefined
+            ? []
+            : [
+                `--host=${options.libplanet.host}`,
+                `--port=${options.libplanet.port}`
+            ];
+
         const graphqlArgs = options.graphql === undefined
             ? []
             : [
@@ -44,6 +68,42 @@ export class Explorer extends Construct {
                 `--graphql-host=${options.graphql.host}`,
                 `--graphql-port=${options.graphql.port}`
             ];
+
+        const privateKeyArgs = [];
+        const envArgs: EnvVar[] = [];
+        if (options.swarmPrivateKey !== undefined) {
+            if (options.swarmPrivateKey.strategy === PrivateKeyStrategy.FromValue) {
+                privateKeyArgs.push(`--swarm-private-key=${options.swarmPrivateKey.privateKey}`);
+            } else if (options.swarmPrivateKey.strategy === PrivateKeyStrategy.FromSecret) {
+                privateKeyArgs.push(`--swarm-private-key=$(SWARM_PRIVATE_KEY)`);
+                envArgs.push({
+                    name: "SWARM_PRIVATE_KEY",
+                    valueFrom: {
+                        secretKeyRef: {
+                            key: options.swarmPrivateKey.secret.key,
+                            name: options.swarmPrivateKey.secret.name,
+                        }
+                    }
+                });
+            }
+        }
+
+        if (options.minerPrivateKey !== undefined) {
+            if (options.minerPrivateKey.strategy === PrivateKeyStrategy.FromValue) {
+                privateKeyArgs.push(`--miner-private-key=${options.minerPrivateKey.privateKey}`);
+            } else if (options.minerPrivateKey.strategy === PrivateKeyStrategy.FromSecret) {
+                privateKeyArgs.push(`--miner-private-key=$(MINER_PRIVATE_KEY)`);
+                envArgs.push({
+                    name: "MINER_PRIVATE_KEY",
+                    valueFrom: {
+                        secretKeyRef: {
+                            key: options.minerPrivateKey.secret.key,
+                            name: options.minerPrivateKey.secret.name,
+                        }
+                    }
+                });
+            }
+        }
 
         new KubeStatefulSet(this, `${id}-statefulset`, {
             metadata: {
@@ -53,7 +113,7 @@ export class Explorer extends Construct {
                 name: id,
             },
             spec: {
-                replicas: 1,
+                replicas: options.replicas,
                 selector: {
                     matchLabels: {
                         app: id,
@@ -73,30 +133,32 @@ export class Explorer extends Construct {
                                 args: [
                                     "NineChronicles.Headless.Executable.dll",
                                     "run",
-                                    `--log-level=${options.logLevel}`,
                                     `--app-protocol-version=${options.appProtocolVersion}`,
-                                    `--host=${options.libplanet.host}`,
-                                    `--port=${options.libplanet.port}`,
+                                    `--trusted-app-protocol-version-signer=${options.trustedAppProtocolVersionSigner}`,
+                                    ...(options.genesisBlockPath === undefined ? [] : [`--genesis-block-path=${options.genesisBlockPath}`]),
                                     ...(options.workers === undefined ? [] : [`--workers=${options.workers}`]),
-                                    `--private-key=${options.privateKey}`,
+                                    ...(options.minimumBroadcastTarget === undefined ? [] : [`--minimum-broadcast-target=${options.minimumBroadcastTarget}`]),
+                                    ...(options.txQuotaPerSigner === undefined ? [] : [`--tx-quota-per-signer=${options.txQuotaPerSigner}`]),
+                                    ...libplanetArgs,
                                     ...graphqlArgs,
                                     ...iceServersArgs,
                                     ...peersArgs,
+                                    ...privateKeyArgs
                                 ],
                                 ports: [
-                                    {
+                                    ...(options.libplanet?.port !== undefined ? [{
                                         containerPort: options.libplanet.port,
                                         name: "node",
                                         protocol: "TCP",
-                                    },
-                                    ...(options.graphql !== undefined ?
+                                    }] : []),
+                                    ...(options.graphql?.port !== undefined ?
                                         [{
                                             containerPort: options.graphql.port,
                                             name: "graphql",
                                             protocol: "TCP",
                                         }] : [])
                                 ],
-                                livenessProbe: {
+                                livenessProbe: options.libplanet?.port !== undefined ? {
                                     failureThreshold: 3,
                                     initialDelaySeconds: 120,
                                     periodSeconds: 5,
@@ -105,7 +167,8 @@ export class Explorer extends Construct {
                                         port: IntOrString.fromNumber(options.libplanet.port),
                                     },
                                     timeoutSeconds: 1,
-                                },
+                                } : undefined,
+                                env: envArgs,
                                 resources: {
                                     requests: {
                                         cpu: Quantity.fromString("1300m"),
@@ -154,12 +217,12 @@ export class Explorer extends Construct {
                 },
                 type: "LoadBalancer",
                 ports: [
-                    {
-                        name: "node",
+                    ...(options.libplanet?.port !== undefined ? [{
                         port: options.libplanet.port,
                         targetPort: IntOrString.fromNumber(options.libplanet.port),
-                    },
-                    ...(options.graphql === undefined
+                        name: "node",
+                    }] : []),
+                    ...(options.graphql?.port === undefined
                         ? []
                         : [{
                             name: "graphql",
