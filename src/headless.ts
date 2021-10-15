@@ -38,7 +38,7 @@ export interface HeadlessOptions {
         type: string,
         path: string,
     },
-    chainTipStaleBehaviour?: string,
+    chainTipStaleBehaviour?: "reboot" | "preload",
     minimumBroadcastTarget: number,
 };
 
@@ -139,6 +139,7 @@ export class Headless extends Construct {
                                     ...(options.workers === undefined ? [] : [`--workers=${options.workers}`]),
                                     ...(options.minimumBroadcastTarget === undefined ? [] : [`--minimum-broadcast-target=${options.minimumBroadcastTarget}`]),
                                     ...(options.txQuotaPerSigner === undefined ? [] : [`--tx-quota-per-signer=${options.txQuotaPerSigner}`]),
+                                    ...(options.chainTipStaleBehaviour === undefined ? [] : [`--chain-tip-stale-behavior=${options.chainTipStaleBehaviour}`]),
                                     ...libplanetArgs,
                                     ...graphqlArgs,
                                     ...iceServersArgs,
