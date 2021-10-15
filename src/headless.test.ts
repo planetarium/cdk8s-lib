@@ -11,6 +11,7 @@ describe(Headless.name, () => {
             libplanet: {
               host: "9c-main-miner-1.planetarium.dev",
               port: 31234,
+              open: true,
             },
             store: {
               path: "/data/miner",
@@ -33,6 +34,7 @@ describe(Headless.name, () => {
             graphql: {
               host: "0.0.0.0",
               port: 80,
+              open: true,
             },
             minimumBroadcastTarget: 50,
             txQuotaPerSigner: 500,
