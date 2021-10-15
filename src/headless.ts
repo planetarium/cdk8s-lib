@@ -200,7 +200,7 @@ export class Headless extends Construct {
                                 }
                             },
                             storageClassName: "gp2-extensible",
-                            volumeMode: "FileSystem"
+                            volumeMode: "Filesystem"
                         }
                     }
                 ]
