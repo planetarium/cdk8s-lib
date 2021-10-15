@@ -2,7 +2,7 @@ import { Construct } from "constructs";
 import { KubeService, IntOrString, Quantity, EnvVar } from "cdk8s-plus-22/lib/imports/k8s";
 import { KubeStatefulSet } from "../imports/k8s";
 
-interface HostAndPort { host: string, port: number | undefined };
+type HostAndPort = { host?: string, port?: number, open: boolean };
 
 export enum PrivateKeyStrategy {
     FromSecret,
@@ -28,17 +28,17 @@ export interface HeadlessOptions {
     trustedAppProtocolVersionSigner: string,
     genesisBlockPath: string,
     txQuotaPerSigner: number,
-    libplanet: HostAndPort | undefined,
-    graphql: HostAndPort | undefined,
+    libplanet?: HostAndPort,
+    graphql?: HostAndPort,
     iceServers?: string[],
-    peers: string[] | undefined,
-    swarmPrivateKey: PrivateKey | undefined,
-    minerPrivateKey: PrivateKey | undefined,
+    peers?: string[],
+    swarmPrivateKey?: PrivateKey,
+    minerPrivateKey?: PrivateKey,
     store: {
         type: string,
         path: string,
     },
-    chainTipStaleBehaviour?: string,
+    chainTipStaleBehaviour?: "reboot" | "preload",
     minimumBroadcastTarget: number,
 };
 
@@ -54,20 +54,16 @@ export class Headless extends Construct {
         const peers = options.peers || [];
         const peersArgs = peers.map(peer => `--peer=${peer}`);
 
-        const libplanetArgs = options.libplanet === undefined
-            ? []
-            : [
-                `--host=${options.libplanet.host}`,
-                `--port=${options.libplanet.port}`
-            ];
+        const libplanetArgs = [
+            ...(options.libplanet?.host !== undefined ? [`--host=${options.libplanet.host}`] : []),
+            ...(options.libplanet?.port !== undefined ? [`--port=${options.libplanet.port}`] : []),
+        ];
 
-        const graphqlArgs = options.graphql === undefined
-            ? []
-            : [
-                `--graphql-server`,
-                `--graphql-host=${options.graphql.host}`,
-                `--graphql-port=${options.graphql.port}`
-            ];
+        const graphqlArgs = [
+            ...(options.graphql !== undefined ? ['--graphql-server'] : []),
+            ...(options.graphql?.host !== undefined ? [`--graphql-host=${options.graphql.host}`] : []),
+            ...(options.graphql?.port !== undefined ? [`--graphql-port=${options.graphql.port}`] : []),
+        ];
 
         const privateKeyArgs = [];
         const envArgs: EnvVar[] = [];
@@ -139,6 +135,7 @@ export class Headless extends Construct {
                                     ...(options.workers === undefined ? [] : [`--workers=${options.workers}`]),
                                     ...(options.minimumBroadcastTarget === undefined ? [] : [`--minimum-broadcast-target=${options.minimumBroadcastTarget}`]),
                                     ...(options.txQuotaPerSigner === undefined ? [] : [`--tx-quota-per-signer=${options.txQuotaPerSigner}`]),
+                                    ...(options.chainTipStaleBehaviour === undefined ? [] : [`--chain-tip-stale-behavior=${options.chainTipStaleBehaviour}`]),
                                     ...libplanetArgs,
                                     ...graphqlArgs,
                                     ...iceServersArgs,
@@ -146,12 +143,12 @@ export class Headless extends Construct {
                                     ...privateKeyArgs
                                 ],
                                 ports: [
-                                    ...(options.libplanet?.port !== undefined ? [{
+                                    ...((options.libplanet?.port !== undefined && options.libplanet?.open === true) ? [{
                                         containerPort: options.libplanet.port,
                                         name: "node",
                                         protocol: "TCP",
                                     }] : []),
-                                    ...(options.graphql?.port !== undefined ?
+                                    ...(options.graphql?.port !== undefined && options.graphql?.open === true ?
                                         [{
                                             containerPort: options.graphql.port,
                                             name: "graphql",
@@ -200,7 +197,7 @@ export class Headless extends Construct {
                                 }
                             },
                             storageClassName: "gp2-extensible",
-                            volumeMode: "FileSystem"
+                            volumeMode: "Filesystem"
                         }
                     }
                 ]
@@ -217,18 +214,18 @@ export class Headless extends Construct {
                 },
                 type: "LoadBalancer",
                 ports: [
-                    ...(options.libplanet?.port !== undefined ? [{
+                    ...(options.libplanet?.port !== undefined && options.libplanet.open === true ? [{
                         port: options.libplanet.port,
                         targetPort: IntOrString.fromNumber(options.libplanet.port),
                         name: "node",
                     }] : []),
-                    ...(options.graphql?.port === undefined
-                        ? []
-                        : [{
+                    ...(options.graphql?.port !== undefined && options.graphql.open === true
+                        ? [{
                             name: "graphql",
                             port: options.graphql.port,
                             targetPort: IntOrString.fromNumber(options.graphql.port),
-                        }]),
+                        }]
+                        : []),
                 ]
             }
         });

@@ -1,5 +1,143 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Headless full-state snapshot 1`] = `
+Array [
+  Object {
+    "apiVersion": "apps/v1",
+    "kind": "StatefulSet",
+    "metadata": Object {
+      "labels": Object {
+        "app": "main-full-state",
+      },
+      "name": "main-full-state",
+    },
+    "spec": Object {
+      "replicas": 1,
+      "selector": Object {
+        "matchLabels": Object {
+          "app": "main-full-state",
+        },
+      },
+      "serviceName": "main-full-state",
+      "template": Object {
+        "spec": Object {
+          "containers": Array [
+            Object {
+              "args": Array [
+                "NineChronicles.Headless.Executable.dll",
+                "run",
+                "--app-protocol-version=100080/6ec8E598962F1f475504F82fD5bF3410eAE58B9B/MEUCIQCrSQ9v7NZBo5yCyvlHgBXW6lD4p2lFlKqK+aMeoKA.IAIgVkcK6hMCw1E0mf+m7rCf+9XnSL8Apg.joe6I1a8Nw70=/ZHUxNjpXaW5kb3dzQmluYXJ5VXJsdTU2Omh0dHBzOi8vZG93bmxvYWQubmluZS1jaHJvbmljbGVzLmNvbS92MTAwMDgwL1dpbmRvd3MuemlwdTk6dGltZXN0YW1wdTEwOjIwMjEtMDktMzBl",
+                "--trusted-app-protocol-version-signer=03eeedcd574708681afb3f02fb2aef7c643583089267d17af35e978ecaf2a1184e",
+                "--genesis-block-path=https://9c-test.s3.ap-northeast-2.amazonaws.com/genesis-block-9c-main",
+                "--minimum-broadcast-target=50",
+                "--tx-quota-per-signer=500",
+                "--port=31234",
+                "--graphql-server",
+                "--graphql-host=0.0.0.0",
+                "--graphql-port=80",
+                "--peer=027bd36895d68681290e570692ad3736750ceaab37be402442ffb203967f98f7b6,9c-main-seed-1.planetarium.dev,31234",
+                "--peer=02f164e3139e53eef2c17e52d99d343b8cbdb09eeed88af46c352b1c8be6329d71,9c-main-seed-2.planetarium.dev,31234",
+                "--peer=0247e289aa332260b99dfd50e578f779df9e6702d67e50848bb68f3e0737d9b9a5,9c-main-seed-3.planetarium.dev,31234",
+                "--swarm-private-key=$(SWARM_PRIVATE_KEY)",
+              ],
+              "command": Array [
+                "dotnet",
+              ],
+              "env": Array [
+                Object {
+                  "name": "SWARM_PRIVATE_KEY",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "miner-keys",
+                      "name": "miner1",
+                    },
+                  },
+                },
+              ],
+              "image": "planetariumhq/ninechronicles-headless:v100080-mt-2021093001",
+              "livenessProbe": Object {
+                "failureThreshold": 3,
+                "initialDelaySeconds": 120,
+                "periodSeconds": 5,
+                "successThreshold": 1,
+                "tcpSocket": Object {
+                  "port": 31234,
+                },
+                "timeoutSeconds": 1,
+              },
+              "name": "main-full-state",
+              "ports": Array [
+                Object {
+                  "containerPort": 80,
+                  "name": "graphql",
+                  "protocol": "TCP",
+                },
+              ],
+              "resources": Object {
+                "requests": Object {
+                  "cpu": "1300m",
+                  "memory": "5Gi",
+                },
+              },
+              "volumeMounts": Array [
+                Object {
+                  "mountPath": "/data",
+                  "name": "main-full-state-data",
+                },
+              ],
+            },
+          ],
+          "dnsPolicy": "ClusterFirst",
+          "restartPolicy": "Always",
+        },
+      },
+      "updateStrategy": Object {
+        "type": "OnDelete",
+      },
+      "volumeClaimTemplates": Array [
+        Object {
+          "metadata": Object {
+            "name": "main-full-state-data",
+          },
+          "spec": Object {
+            "accessModes": Array [
+              "ReadWriteOnce",
+            ],
+            "resources": Object {
+              "requests": Object {
+                "storage": "100Gi",
+              },
+            },
+            "storageClassName": "gp2-extensible",
+            "volumeMode": "Filesystem",
+          },
+        },
+      ],
+    },
+  },
+  Object {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": Object {
+      "name": "main-full-state",
+    },
+    "spec": Object {
+      "ports": Array [
+        Object {
+          "name": "graphql",
+          "port": 80,
+          "targetPort": 80,
+        },
+      ],
+      "selector": Object {
+        "app": "main-full-state",
+      },
+      "type": "LoadBalancer",
+    },
+  },
+]
+`;
+
 exports[`Headless snapshot 1`] = `
 Array [
   Object {
@@ -28,19 +166,42 @@ Array [
                 "run",
                 "--app-protocol-version=100080/6ec8E598962F1f475504F82fD5bF3410eAE58B9B/MEUCIQCrSQ9v7NZBo5yCyvlHgBXW6lD4p2lFlKqK+aMeoKA.IAIgVkcK6hMCw1E0mf+m7rCf+9XnSL8Apg.joe6I1a8Nw70=/ZHUxNjpXaW5kb3dzQmluYXJ5VXJsdTU2Omh0dHBzOi8vZG93bmxvYWQubmluZS1jaHJvbmljbGVzLmNvbS92MTAwMDgwL1dpbmRvd3MuemlwdTk6dGltZXN0YW1wdTEwOjIwMjEtMDktMzBl",
                 "--trusted-app-protocol-version-signer=03eeedcd574708681afb3f02fb2aef7c643583089267d17af35e978ecaf2a1184e",
+                "--genesis-block-path=https://9c-test.s3.ap-northeast-2.amazonaws.com/genesis-block-9c-main",
+                "--minimum-broadcast-target=50",
+                "--tx-quota-per-signer=500",
                 "--host=9c-main-miner-1.planetarium.dev",
                 "--port=31234",
-                "--swarm-private-key=[object Object]",
-                "--swarm-private-key=[object Object]",
                 "--graphql-server",
                 "--graphql-host=0.0.0.0",
                 "--graphql-port=80",
                 "--peer=027bd36895d68681290e570692ad3736750ceaab37be402442ffb203967f98f7b6,9c-main-seed-1.planetarium.dev,31234",
                 "--peer=02f164e3139e53eef2c17e52d99d343b8cbdb09eeed88af46c352b1c8be6329d71,9c-main-seed-2.planetarium.dev,31234",
                 "--peer=0247e289aa332260b99dfd50e578f779df9e6702d67e50848bb68f3e0737d9b9a5,9c-main-seed-3.planetarium.dev,31234",
+                "--swarm-private-key=$(SWARM_PRIVATE_KEY)",
+                "--miner-private-key=$(MINER_PRIVATE_KEY)",
               ],
               "command": Array [
                 "dotnet",
+              ],
+              "env": Array [
+                Object {
+                  "name": "SWARM_PRIVATE_KEY",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "miner-keys",
+                      "name": "miner1",
+                    },
+                  },
+                },
+                Object {
+                  "name": "MINER_PRIVATE_KEY",
+                  "valueFrom": Object {
+                    "secretKeyRef": Object {
+                      "key": "miner-keys",
+                      "name": "miner1",
+                    },
+                  },
+                },
               ],
               "image": "planetariumhq/ninechronicles-headless:v100080-mt-2021093001",
               "livenessProbe": Object {
@@ -102,7 +263,7 @@ Array [
               },
             },
             "storageClassName": "gp2-extensible",
-            "volumeMode": "FileSystem",
+            "volumeMode": "Filesystem",
           },
         },
       ],
